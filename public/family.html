@@ -13,21 +13,64 @@
     <header class="site-header">
       <div class="header-inner">
         <h1 class="brand">ApnaParivar</h1>
-        <button class="btn-ghost" onclick="goBack()">Back</button>
+        <!-- Circular back button with arrow -->
+        <button class="btn-back" onclick="goBack()" aria-label="Back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </div>
     </header>
 
     <main class="container">
       <h2>👨‍👩‍👧 Family Members</h2>
       <div class="card">
-        <label for="memberName" class="sr-only">Member Name</label>
-        <input type="text" id="memberName" placeholder="Member Name" />
-        <label for="relation" class="sr-only">Relation</label>
-        <input type="text" id="relation" placeholder="Relation" />
-        <button class="btn-primary" onclick="addMember()">Add Member</button>
+        <div class="form-row">
+          <input type="text" id="memberName" placeholder="Full name" />
+          <input type="number" id="memberAge" placeholder="Age" min="0" />
+        </div>
+        <div class="form-row">
+          <select id="memberGender">
+            <option value="">Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+          <input type="text" id="relation" placeholder="Relation (e.g., father, sister)" />
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button class="btn-ghost" id="cancelEdit" style="display:none;">Cancel Edit</button>
+          <button class="btn-primary" id="addMemberBtnLocal">Add Member</button>
+        </div>
       </div>
 
       <div id="memberList" class="card"></div>
+
+      <!-- Edit Member Modal (re-used for edit) -->
+      <div id="editMemberModal" class="modal-backdrop" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editMemberTitle">
+          <h3 id="editMemberTitle">Edit Member</h3>
+          <div class="card">
+            <div class="form-row">
+              <input id="em_name" placeholder="Full name" />
+              <input id="em_age" type="number" placeholder="Age" />
+            </div>
+            <div class="form-row">
+              <select id="em_gender">
+                <option value="">Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+              <input id="em_relation" placeholder="Relation" />
+            </div>
+            <div class="modal-actions">
+              <button id="em_cancel" class="btn-ghost">Cancel</button>
+              <button id="em_save" class="btn-primary">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script src="js/firebaseConfig.js"></script>
