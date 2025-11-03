@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard | ApnaParivar</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <h1 class="brand">ApnaParivar</h1>
+        <button class="btn-ghost" onclick="signOut()">Logout</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <h2>👋 Welcome to ApnaParivar</h2>
+      <div id="user-info"></div>
+
+      <div class="card">
+        <h3>Create New Family</h3>
+        <input type="text" id="familyName" placeholder="Family Name" />
+        <button class="btn-primary" id="createFamilyBtn">Create</button>
+      </div>
+
+      <div class="card">
+        <h3>Your Families</h3>
+        <div id="families"></div>
+      </div>
+    </main>
+
+    <script src="js/firebaseConfig.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/nav.js"></script>
+  </body>
+</html>
