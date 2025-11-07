@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ApnaParivar - Payment</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <button class="btn-back" onclick="window.location.href='index.html'">←</button>
+      <h1 class="brand">Subscription Payment</h1>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card" style="max-width:480px;margin:40px auto;text-align:center;">
+      <h2>ApnaParivar Subscription</h2>
+      <p id="subscriptionStatus" style="color:#555;">Checking subscription status...</p>
+
+      <div style="margin:18px 0;">
+        <p><strong>₹500/year</strong> after the first free year.</p>
+        <p>Payment directed to: <strong>SuperAdmin’s Account</strong></p>
+      </div>
+
+      <hr style="margin:20px 0;">
+
+      <div style="margin-bottom:20px;">
+        <label style="font-weight:600;">Current Plan:</label><br>
+        <p id="displayPlan" style="font-size:1.2em; font-weight:bold; margin-top:10px;"></p>
+        <select id="planSelect" class="select-input" style="display:none;"> 
+          <option value="free">Free - 1st Year</option>
+          <option value="paid">₹500 / Year</option>
+        </select>
+      </div>
+
+      <button id="payBtn" class="btn-primary" style="width:180px;">Proceed to Action</button>
+             <button id="forceExpireBtn" class="btn-primary" style="width:180px; margin-top: 10px; background-color: #dc3545; display:none;">Force Expired Plan</button>
+
+      <div id="statusMsg" style="margin-top:20px;font-weight:600;"></div>
+      <div id="debugInfo" style="margin-top:10px;font-size:0.8em;color:#999;"></div> 
+      <div id="qrContainer" style="display:none;margin-top:18px;text-align:center;">
+        <p style="margin-bottom:8px;font-weight:600;">Scan this QR to simulate payment</p>
+  <div id="qrHolder" style="width:180px;height:180px;display:block;margin:0 auto;"></div>
+  <img id="qrImg" src="" alt="QR Code" style="width:180px;height:180px;border:1px solid #e6e9ef;border-radius:8px;display:none;margin:0 auto;" />
+  <canvas id="qrCanvas" width="180" height="180" style="width:180px;height:180px;border:1px solid #e6e9ef;border-radius:8px;display:none;margin:0 auto;background:#fff"></canvas>
+        <div style="margin-top:10px;">
+          <button id="confirmPaymentBtn" class="btn-primary" style="width:160px;">I have paid (mock)</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+<!-- QR library (CDN). If blocked, page will fall back to canvas placeholder already present. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+ <script>
+    const payBtn = document.getElementById('payBtn');
+    const statusMsg = document.getElementById('statusMsg');
+    const planSelect = document.getElementById('planSelect');
+    const displayPlan = document.getElementById('displayPlan');
+    const subscriptionStatus = document.getElementById('subscriptionStatus');
+    const debugInfo = document.getElementById('debugInfo');
+    const forceExpireBtn = document.getElementById('forceExpireBtn'); // New reference
+
+    const FREE_PLAN_DURATION_MS = 365 * 24 * 60 * 60 * 1000; // 1 year in milliseconds
+    const SIGN_IN_KEY = 'apnaParivar_signInDate';
+    
+    // --- SuperAdmin's Mock Bank Details (For Demonstration) ---
+    const SUPERADMIN_BANK_DETAILS = {
+        AccountHolder: "S. Sharma",
+        Bank: "Apna Bank of India (ABI)",
+        Account: "**** **** 1234",
+        IFSC: "ABI0000456"
+    };
+
+    // --- Core Logic: Determine Current Plan ---
+    function getCurrentPlan() {
+      let signInDateStr = localStorage.getItem(SIGN_IN_KEY);
+      let today = new Date();
+  let currentPlan = 'free';
+  let statusText = 'Your first year is free!';
+  let buttonText = 'Activate Free Plan';
+  let debugText = 'Current Date: ' + today.toDateString(); // Added current date
+
+      // Show the Force Expire button only if a sign-in date exists
+      if (forceExpireBtn) {
+          forceExpireBtn.style.display = signInDateStr ? 'block' : 'none';
+      }
+
+
+      if (!signInDateStr) {
+        // First-time visit/sign-in (simulated)
+        debugText += ' | Sign-in date not found (First visit assumed).';
+      } else {
+        // Date is stored, check expiry
+        let signInDate = new Date(signInDateStr);
+        // Using 365 days for simplicity, but a real system should use date arithmetic for Leap Years
+        let expiryDate = new Date(signInDate.getTime() + FREE_PLAN_DURATION_MS); 
+
+        // Calculate time difference for better debug info
+        const timeDiff = expiryDate - today;
+        
+        if (timeDiff <= 0) {
+          // Free year has expired
+          currentPlan = 'paid';
+          statusText = 'Your free year has ended. Please renew your subscription for ₹500/year.';
+          buttonText = 'Proceed to Pay (₹500)';
+
+          const daysOverdue = Math.floor(Math.abs(timeDiff) / (1000 * 60 * 60 * 24));
+          debugText += ' | Expired: ' + daysOverdue + ' days ago';
+        } else {
+          // Free year is still active
+          const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+          statusText = `Your first year is <strong>free</strong>! (${daysRemaining} days remaining)`;
+          buttonText = 'Manage Plan';
+          debugText += ' | Remaining: ' + daysRemaining + ' days';
+        }
+
+        debugText += ` | Start: ${signInDate.toDateString()} | End: ${expiryDate.toDateString()}`;
+      }
+
+      // Update the UI elements
+      planSelect.value = currentPlan;
+      displayPlan.textContent = currentPlan === 'free' ? 'Free (1st Year)' : '₹500 / Year';
+      subscriptionStatus.innerHTML = statusText;
+      payBtn.textContent = buttonText;
+      debugInfo.innerHTML = debugText; // Use innerHTML to render the bold tags
+    }
+
+    // draw token on canvas fallback (non-scannable decorative QR-like box)
+    function drawTokenOnCanvas(canvas, token) {
+      const ctx = canvas.getContext('2d');
+      // clear
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      // border
+      ctx.strokeStyle = '#e6e9ef';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(2,2,canvas.width-4,canvas.height-4);
+      // render token text (wrapped)
+      ctx.fillStyle = '#111827';
+      ctx.font = '14px Poppins, Arial';
+      ctx.textAlign = 'center';
+      const chunks = token.match(/.{1,24}/g) || [token];
+      const startY = canvas.height/2 - (chunks.length-1)*12;
+      for (let i=0;i<chunks.length;i++) {
+        ctx.fillText(chunks[i], canvas.width/2, startY + i*24);
+      }
+      // add small squares in corners for visual authenticity
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(12,12,36,36);
+      ctx.fillRect(canvas.width-48,12,36,36);
+      ctx.fillRect(12,canvas.height-48,36,36);
+      canvas.style.display = 'block';
+    }
+
+    // Initialize the plan status on page load
+    getCurrentPlan();
+
+    // --- Event Listener for Force Expire Button ---
+    if (forceExpireBtn) {
+        forceExpireBtn.addEventListener('click', () => {
+            // Calculate a date exactly 366 days in the past (guarantees expiry)
+            const expiredDate = new Date(Date.now() - (FREE_PLAN_DURATION_MS + (24 * 60 * 60 * 1000)));
+            localStorage.setItem(SIGN_IN_KEY, expiredDate.toISOString());
+            getCurrentPlan(); // Update the UI immediately
+            statusMsg.innerHTML = '⚠ DEMO MODE: Subscription forcibly expired!';
+        });
+    }
+
+    // --- Payment/Action Handler ---
+    payBtn.addEventListener('click', () => {
+      const plan = planSelect.value;
+
+      payBtn.disabled = true;
+      payBtn.textContent = 'Processing...';
+      statusMsg.textContent = '';
+
+      setTimeout(() => {
+        if (plan === 'free') {
+          // Logic for first-time activation (Free Plan)
+          let signInDateStr = localStorage.getItem(SIGN_IN_KEY);
+          
+          if (!signInDateStr) {
+            // Set the start date only if it hasn't been set before
+            localStorage.setItem(SIGN_IN_KEY, new Date().toISOString());
+            statusMsg.innerHTML = '✅ Subscription Activated: <strong>Free Plan (Valid for 1 Year)</strong><br>Linked to SuperAdmin Account.';
+          } else {
+             // Already active, just confirmation
+             statusMsg.innerHTML = 'Plan is currently *Free* (Active).';
+          }
+        } else {
+          // --- MOCK PAYMENT LOGIC for ₹500/year (2nd Year Onwards) ---
+          // Instead of immediately marking paid, show a QR code that encodes mock payment details
+          const txId = Date.now().toString().slice(-8);
+          const amount = '₹500';
+          // generate a random token for demo QR (no real payment data)
+          const randomToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
+              const qrContainer = document.getElementById('qrContainer');
+              const confirmBtn = document.getElementById('confirmPaymentBtn');
+              const qrImg = document.getElementById('qrImg');
+              const qrCanvas = document.getElementById('qrCanvas');
+              const qrHolder = document.getElementById('qrHolder');
+
+              // Try to render a scannable QR using qrcodejs if available, otherwise fall back to canvas placeholder
+              if (window.QRCode && qrHolder) {
+                // clear any previous
+                qrHolder.innerHTML = '';
+                try {
+                  new QRCode(qrHolder, { text: randomToken, width: 180, height: 180 });
+                  if (qrCanvas) qrCanvas.style.display = 'none';
+                  if (qrImg) qrImg.style.display = 'none';
+                } catch (e) {
+                  // fallback to canvas draw
+                  if (qrCanvas && qrCanvas.getContext) {
+                    drawTokenOnCanvas(qrCanvas, randomToken);
+                  }
+                }
+              } else {
+                // no library — draw placeholder token on canvas
+                if (qrCanvas && qrCanvas.getContext) {
+                  drawTokenOnCanvas(qrCanvas, randomToken);
+                }
+              }
+
+              if (qrContainer) qrContainer.style.display = 'block';
+              statusMsg.innerHTML = 'Scan the QR code (demo) or click the confirm button to simulate payment.';
+
+          // wire confirm button to finalize mock payment
+          if (confirmBtn) {
+            confirmBtn.onclick = function() {
+              // finalize mock payment
+              const paymentMsg = `\n                ✅ Payment Confirmed (Mock): ${amount}<br>\n                Transaction ID: ${txId}<br>\n                Funds directed to: <strong>${SUPERADMIN_BANK_DETAILS.AccountHolder}</strong><br>\n                Subscription Active for 1 Year!`;
+              statusMsg.innerHTML = paymentMsg;
+              // mark sign-in date as today (renewal)
+              localStorage.setItem(SIGN_IN_KEY, new Date().toISOString());
+              // hide QR
+              if (qrContainer) qrContainer.style.display = 'none';
+              // refresh UI state
+              getCurrentPlan();
+            };
+          }
+        }
+        
+        // Re-evaluate the plan status after the action
+        getCurrentPlan(); 
+        payBtn.disabled = false;
+        payBtn.textContent = 'Done ✔'; 
+
+        // After 5 seconds, revert button text and clear message for better UX
+        setTimeout(() => {
+            getCurrentPlan(); 
+            statusMsg.textContent = '';
+            payBtn.disabled = false;
+        }, 5000);
+
+
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function getFamilyDoc(familyId) {
+      return get(/databases/$(database)/documents/families/$(familyId));
+    }
+
+    function isFamilyOwner(familyId) {
+      return isSignedIn() && getFamilyDoc(familyId).data.ownerUid == request.auth.uid;
+    }
+
+    function isFamilyAdmin(familyId) {
+      return isSignedIn() && getFamilyDoc(familyId).data.admins[request.auth.uid] != null;
+    }
+
+    function isFamilyMember(familyId) {
+      return isSignedIn() && getUserDoc(request.auth.uid).data.family_id == familyId;
+    }
+
+    // Families
+    match /families/{familyId} {
+      // Read family metadata if signed-in and the user is owner/admin/member
+      allow get, list: if isSignedIn() && (isFamilyOwner(familyId) || isFamilyAdmin(familyId) || isFamilyMember(familyId));
+
+  // Create a family: authenticated user may create.
+  // NOTE: during development we allow any signed-in user to create a family. In production you may
+  // want to validate that request.resource.data.ownerUid == request.auth.uid or create families
+  // via a trusted server endpoint to ensure ownership is correctly assigned.
+  allow create: if isSignedIn();
+
+      // Update/delete: only owner or admins may modify family document
+      allow update, delete: if isFamilyOwner(familyId) || isFamilyAdmin(familyId);
+
+      // Members subcollection
+      match /members/{memberId} {
+        allow get, list: if isSignedIn() && (isFamilyOwner(familyId) || isFamilyAdmin(familyId) || isFamilyMember(familyId));
+        allow create, update, delete: if isFamilyOwner(familyId) || isFamilyAdmin(familyId);
+      }
+
+      // Admin invites
+      // Approved viewers (emails stored under family for quick approval checks)
+      match /viewers/{viewerId} {
+        allow get, list: if isSignedIn() && (isFamilyOwner(familyId) || isFamilyAdmin(familyId) || isFamilyMember(familyId));
+        allow create, update, delete: if isSignedIn() && (isFamilyOwner(familyId) || isFamilyAdmin(familyId));
+      }
+
+      match /adminInvites/{inviteId} {
+        allow create: if isSignedIn() && (isFamilyOwner(familyId) || isFamilyAdmin(familyId));
+        allow get, list: if isSignedIn() && (isFamilyOwner(familyId) || isFamilyAdmin(familyId));
+        allow update, delete: if isSignedIn() && (isFamilyOwner(familyId) || isFamilyAdmin(familyId));
+      }
+
+      // Custom fields doc (per-family)
+      match /customFields/{docId} {
+        allow get, list: if isSignedIn() && (isFamilyOwner(familyId) || isFamilyAdmin(familyId) || isFamilyMember(familyId));
+        allow create, update, delete: if isFamilyOwner(familyId) || isFamilyAdmin(familyId);
+      }
+    }
+
+    // Users
+    // User documents are keyed by UID. Rules allow a user to read/write their own profile.
+    // Additionally, family owners/admins may read or update user profiles belonging to their family
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || (
+        // admin/owner may read users in their family
+        get(/databases/$(database)/documents/users/$(userId)).data.family_id != null &&
+        (
+          isFamilyOwner(get(/databases/$(database)/documents/users/$(userId)).data.family_id) ||
+          isFamilyAdmin(get(/databases/$(database)/documents/users/$(userId)).data.family_id)
+        )
+      ));
+
+      allow create: if isSignedIn() && request.auth.uid == userId;
+
+      allow update: if isSignedIn() && (
+        // user updating their own profile
+        request.auth.uid == userId ||
+        // or an owner/admin of the family the target user belongs to
+        (get(/databases/$(database)/documents/users/$(userId)).data.family_id != null && (
+          isFamilyOwner(get(/databases/$(database)/documents/users/$(userId)).data.family_id) ||
+          isFamilyAdmin(get(/databases/$(database)/documents/users/$(userId)).data.family_id)
+        ))
+      );
+
+      // disallow delete except by the user themselves
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Fallback: deny everything else by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApnaParivar - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css"> 
+    <style>
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr; 
+            gap: 30px;
+        }
+        .role-slot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap; 
+        }
+        .role-slot:last-child { border-bottom: none; }
+        .role-badge { 
+            background-color: var(--color-primary); 
+            color: white; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 0.8rem;
+        }
+        .field-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        @media (max-width: 768px) {
+            .admin-grid { grid-template-columns: 1fr; }
+            .field-input-group { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">ApnaParivar</div>
+        <nav>
+            <a href="dashboard.html" class="nav-link">🏠 Dashboard</a>
+            <a href="dashboard.html" class="nav-link">🌳 Tree View</a>
+            <a href="#" class="nav-link active">⚙ Admin Panel</a>
+            <a href="payment.html" class="nav-link">💳 Subscription</a>
+        </nav>
+        <hr style="border-color: rgba(255, 255, 255, 0.2); margin: 20px 0;">
+        <p style="font-size: 0.8rem; opacity: 0.8;" id="family-name-display">My Family</p>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>⚙ Administration & Security Center</h1>
+        </div>
+        
+        <div class="admin-grid">
+            
+            <div>
+                <div class="card">
+                    <h3>🛡 Admin Role Assignment</h3>
+                    <div id="admin-slots-container">
+                        </div>
+                    <p style="font-size: 0.8rem; margin-top: 20px; color: var(--color-primary);">*Only Admin 1 can assign/transfer Admin 2 and 3 roles.</p>
+                </div>
+
+                <div class="card">
+                    <h3>📝 Custom Family Fields (10 Programmable)</h3>
+                    <p style="font-size: 0.85rem; opacity: 0.7; margin-bottom: 15px;">Define the extra fields unique to your family.</p>
+                    <div id="custom-fields-form" class="field-input-group">
+                        </div>
+                    <button class="btn-primary" style="margin-top: 20px;" onclick="saveCustomFieldsToDB()">Save Custom Fields</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>👀 Viewer Role Management</h3>
+                <p style="font-size: 0.85rem; opacity: 0.7;">Approve or revoke read-only access based on Gmail ID.</p>
+                
+                <h4 style="margin-top: 30px;">Approve New Viewer</h4>
+                <input type="email" id="newViewerEmail" placeholder="Enter Gmail ID to Approve" required>
+                <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="approveNewViewer()">Approve New Viewer</button>
+
+                <h4 style="margin-top: 30px;">Current User List</h4>
+                <div id="viewer-list-container">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebaseConfig.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/nav.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
