@@ -21,6 +21,9 @@
         <h2>Welcome</h2>
         <p>Sign in with your Google account to manage your family data securely.</p>
         <div style="display:flex;gap:10px;flex-direction:column;max-width:320px;">
+          <select id="familySelect" class="form-select" style="display:none;">
+            <option value="">Select Family</option>
+          </select>
           <button class="btn-primary" onclick="signIn()" aria-label="Sign in with Google">Sign in with Google</button>
           <button class="btn-ghost" onclick="signInAsViewer()" aria-label="Join as viewer">Join as viewer (enter Family ID)</button>
         </div>
@@ -30,5 +33,6 @@
     <script src="js/firebaseConfig.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/nav.js"></script>
+    <script src="js/families.js"></script>
   </body>
 </html>
